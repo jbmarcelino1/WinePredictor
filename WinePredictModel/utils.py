@@ -4,6 +4,7 @@ import nltk
 from nltk.corpus import stopwords
 from textblob import Blobber
 from textblob.sentiments import NaiveBayesAnalyzer
+from WinePredictModel.data import data
 nltk.download('stopwords')
 nltk.download('movie_reviews')
 
@@ -40,6 +41,17 @@ def create_dummies_ohe(X,cat_columns):
     categorical_x = pd.get_dummies(X[cat_columns],prefix=['1','2','3','4','5'])
     numeric_cols = list(set(X.columns)-set(cat_columns))
     return pd.concat([X[numeric_cols],categorical_x], axis=1)
+
+def select_cat_data_threshold(X,feature_data,threshold_value,cat_features):
+    dictionary_filter = {
+                      cat:feature_data.loc[
+                      (feature_data[cat]==True) &
+                      (feature_data['scores']<=threshold_value),'features'
+                      ]for cat in cat_features
+                      }
+    for cat,series in dictionary_filter.items():
+        X.loc[X[cat].isin(series),cat] = 'Other'
+    return X
 
 
 
