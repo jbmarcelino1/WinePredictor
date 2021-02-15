@@ -6,5 +6,3 @@ COLUMN_DROP = [
     "taster_twitter_handle",
 ]
 DROP_NA = ["variety", "province", "country", "taster_name"]
-
-
