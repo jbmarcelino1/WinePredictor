@@ -7,3 +7,4 @@ COLUMN_DROP = [
 ]
 DROP_NA = ["variety", "province", "country", "taster_name"]
 
+

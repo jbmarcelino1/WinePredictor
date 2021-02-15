@@ -2,11 +2,15 @@ import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from  WinePredictModel.utils import (clean_descriptions,
     clean_description_sentiment,
-    vocab_richness)
+    vocab_richness,
+    select_cat_data_threshold)
 from WinePredictModel.data import GetData
 TEMP = 'temperature'
 COUNTRY_ISO = 'country_iso_data'
 WEATHER_MONTH = 'weather_country_month_v2'
+FEATURES = 'data_test'
+FILE_LOCATION ='gcp'
+CAT_FEATURES = ['province','variety','country','winery','region_1']
 
 
 class YearVintageEncoder(BaseEstimator, TransformerMixin):
@@ -90,7 +94,8 @@ class WeatherEncoder(BaseEstimator, TransformerMixin):
 
     def __init__(self, country):
         self.country = country
-        d = GetData("mac")
+        self.year = year
+        d = GetData(FILE_LOCATION)
         self.temp = d.select_data_type(TEMP)
         self.country_iso = d.select_data_type(COUNTRY_ISO)
         self.weather_month = d.select_data_type(WEATHER_MONTH)
@@ -115,7 +120,38 @@ class WeatherEncoder(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
-# TODO: add feature remover function
+class PcaEncoder(BaseEstimator, TransformerMixin):
+
+    def __init__(self):
+        pass
+
+    def transform(self, X, y=None):
+        """implement encode here"""
+        assert isinstance(X, pd.DataFrame)
+        pca = PCA(n_components=13)
+        return pca.fit_transform(X)
+
+    def fit(self, X, y=None):
+        return self
+
+class FeatureSelectionEncoder(BaseEstimator, TransformerMixin):
+
+    def __init__(self,threshold,cat_features=CAT_FEATURES):
+        d = GetData(FILE_LOCATION)
+        self.features = d.select_data_type(FEATURES)
+        self.threshold = threshold
+        self.cat_features = cat_features
+
+    def transform(self, X, y=None):
+        """implement encode here"""
+        assert isinstance(X, pd.DataFrame)
+        return select_cat_data_threshold(
+            X,self.features,self.threshold,self.cat_features
+            )
+
+    def fit(self, X, y=None):
+        return self
+
 
 if __name__ == "__main__":
     params =
