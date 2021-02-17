@@ -1,12 +1,16 @@
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from WinePredictModel.utils import (
+from utils import (
     clean_descriptions,
     clean_description_sentiment,
     vocab_richness,
     select_cat_data_threshold,
+    create_dummies_ohe
 )
-from WinePredictModel.data import GetData
+from sklearn.impute import SimpleImputer
+from data import GetData
+import numpy as np
+from sklearn.decomposition import PCA
 
 TEMP = "temperature"
 COUNTRY_ISO = "country_iso_data"
@@ -23,12 +27,27 @@ class YearVintageEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        X["year"] = pd.to_numeric(X[self.title].str.extract("(\d+)"))
+        X['year'] = X[self.title].str.extract('(\d+)')
+        X["year"] = pd.to_numeric(X["year"])
         X["year"] = np.where(
             (X["year"] >= 2021) | (X["year"] <= (2021 - 70)), np.nan, X["year"]
         )
-        X["year"] = pd.to_datetime(X["year"]).dt.year
-        return X[["year"]].reset_index(drop=True)
+        X["year"] = pd.to_datetime(X["year"],format='%Y').dt.year
+        sc = SimpleImputer(strategy = 'median')
+        X[['year']] = sc.fit_transform(X[['year']])
+        return X
+
+    def fit(self, X, y=None):
+        return self
+
+class YearReturnEnconder(BaseEstimator, TransformerMixin):
+    def __init__(self, year):
+        self.year = year
+
+    def transform(self, X, y=None):
+        """implement encode here"""
+        assert isinstance(X, pd.DataFrame)
+        return X[[self.year]]
 
     def fit(self, X, y=None):
         return self
@@ -70,7 +89,9 @@ class TitleLengthEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        for col in [self.title, self.taster_name]:
+        col_list = [self.title, self.taster_name]
+        X[col_list] = X[col_list].astype(str)
+        for col in col_list:
             X[f"{col}_length"] = X[col].apply(lambda x: len(x))
         return X[["title_length", "taster_name_length"]].reset_index(drop=True)
 
@@ -85,7 +106,7 @@ class PriceBinEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        X["price_bin"] = pd.cut(X["price"], bins=15, labels=False)
+        X["price_bin"] = pd.cut(X[self.price], bins=15, labels=False)
         return X[["price_bin"]].reset_index(drop=True)
 
     def fit(self, X, y=None):
@@ -93,7 +114,7 @@ class PriceBinEncoder(BaseEstimator, TransformerMixin):
 
 
 class WeatherEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, country):
+    def __init__(self, country, year):
         self.country = country
         self.year = year
         d = GetData(FILE_LOCATION)
@@ -121,21 +142,37 @@ class WeatherEncoder(BaseEstimator, TransformerMixin):
             left_on=["country_iso", "year"],
             right_on=["country_iso", "year"],
         )
-        return df
+        return df[['avg_temp']].reset_index(drop=True)
 
     def fit(self, X, y=None):
         return self
 
 
-class PcaEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self):
-        pass
+class PriceImputer(BaseEstimator, TransformerMixin):
+    def __init__(self,price):
+        self.price = price
 
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        pca = PCA(n_components=13)
-        return pca.fit_transform(X)
+        si = SimpleImputer(strategy='median')
+        X[[self.price]] = si.fit_transform(X[[self.price]])
+
+        return X
+
+    def fit(self, X, y=None):
+        return self
+
+class CreateDummies(BaseEstimator, TransformerMixin):
+    def __init__(self,cat_features=CAT_FEATURES):
+        self.cat_features = cat_features
+
+    def transform(self, X, y=None):
+        """implement encode here"""
+        assert isinstance(X, pd.DataFrame)
+        prefix_list = [str(i) for i in range(len(self.cat_features))]
+        categorical_x = pd.get_dummies(X[self.cat_features], prefix=prefix_list)
+        return categorical_x
 
     def fit(self, X, y=None):
         return self
@@ -151,16 +188,53 @@ class FeatureSelectionEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        return select_cat_data_threshold(
+        self.features.columns = [i.replace('country_iso','country') for i in self.features.columns]
+        X_filtered =  select_cat_data_threshold(
             X, self.features, self.threshold, self.cat_features
         )
+        return X_filtered.reset_index(drop=True)
 
     def fit(self, X, y=None):
         return self
 
 
 if __name__ == "__main__":
-    df = get_data(**params)
-    df = clean_df(df)
-    dist = DistanceTransformer()
-    X = dist.transform(df)
+    df = GetData('gcp').clean_data()
+    fs = FeatureSelectionEncoder(1E-6)
+    df = fs.fit_transform(df)
+    print(df.columns)
+    # dist = YearVintageEncoder('title')
+    # X_dist = dist.transform(df)
+    # assert isinstance(X_dist,pd.DataFrame)
+    # assert "year" in X_dist.columns, 'should contain year'
+    # sent = DescriptionSentimentEncoder('description')
+    # X_sent = sent.transform(df)
+    # assert isinstance(X_sent,pd.DataFrame)
+    # print(X_sent["pos"].dtype)
+    # vocab = VocabRichnessEncoder('description')
+    # X_vocab = vocab.transform(df)
+    # assert  isinstance(X_vocab,pd.DataFrame)
+    # print(X_vocab["vocab richness"].dtype)
+    # title_len = TitleLengthEncoder('taster_name','title')
+    # X_len = title_len.transform(df)
+    # print(X_len.head())
+    # pb = PriceBinEncoder('price')
+    # X_pb = pb.transform(df)
+    # print(len(X_pb["price_bin"].unique()))
+    # we = WeatherEncoder('country','year')
+    # X_we = we.transform(df)
+    # print(X_we.columns)
+    # print(X_we.info())
+    # fs = FeatureSelectionEncoder(1E-6)
+    # X_features = fs.transform(df)
+    # print(X_features.columns)
+    # print(X_features.info())
+
+
+
+
+
+
+
+
+

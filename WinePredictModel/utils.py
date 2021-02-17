@@ -4,7 +4,11 @@ import nltk
 from nltk.corpus import stopwords
 from textblob import Blobber
 from textblob.sentiments import NaiveBayesAnalyzer
-from WinePredictModel.data import data
+from data import GetData
+import pandas as pd
+from sklearn.metrics import f1_score
+
+
 
 nltk.download("stopwords")
 nltk.download("movie_reviews")
@@ -24,8 +28,11 @@ def clean_descriptions(df, description_column):
 def clean_description_sentiment(df, description_column):
     cleaned_description = clean_descriptions(df, description_column)
     tb = Blobber(analyzer=NaiveBayesAnalyzer())
+    blob = [tb(text) for text in cleaned_description]
     sentiment_values = [text.sentiment for text in blob]
-    sentiment_df = pd.DataFrame(zip(*sentiment_values)).T.drop(columns="clf")
+    sentiment_df = pd.DataFrame(zip(*sentiment_values)).T
+    sentiment_df.columns = ['clf','pos','neg']
+    sentiment_df = sentiment_df[['pos','neg']].astype(float)
     return df.join(sentiment_df)
 
 
@@ -44,7 +51,7 @@ def f1(model, X_test, y_test):
 
 
 def create_dummies_ohe(X, cat_columns):
-    categorical_x = pd.get_dummies(X[cat_columns], prefix=["1", "2", "3", "4", "5"])
+    categorical_x = pd.get_dummies(X[cat_columns], prefix=[str(i) for i in range(len(cat_columns))])
     numeric_cols = list(set(X.columns) - set(cat_columns))
     return pd.concat([X[numeric_cols], categorical_x], axis=1)
 

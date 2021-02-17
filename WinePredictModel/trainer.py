@@ -4,8 +4,9 @@ import warnings
 import joblib
 import mlflow
 import pandas as pd
+from tempfile import mkdtemp
 from sklearn.impute import SimpleImputer
-from sklearn.ensemble import RandomForestRegressor
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.multiclass import OneVsRestClassifier
 from sklearn.model_selection import cross_val_score, train_test_split
 from sklearn.preprocessing import QuantileTransformer, OneHotEncoder
@@ -15,7 +16,10 @@ from memoized_property import memoized_property
 from mlflow.tracking import MlflowClient
 from psutil import virtual_memory
 from sklearn.compose import ColumnTransformer
-from WinePredictModel.encoder import (
+from termcolor import colored
+from sklearn.decomposition import PCA
+from data import GetData
+from encoder import (
     YearVintageEncoder,
     DescriptionSentimentEncoder,
     VocabRichnessEncoder,
@@ -23,14 +27,16 @@ from WinePredictModel.encoder import (
     PriceBinEncoder,
     WeatherEncoder,
     FeatureSelectionEncoder,
-    PcaEncoder,
+    YearReturnEnconder,
+    PriceImputer,
+    CreateDummies
 )
-from WinePredictModel.utils import f1
+from utils import f1
 
 THRESHOLD = 1e-6
 MLFLOW_URI = "https://mlflow.lewagon.co/"
 CAT_FEATURES = ["province", "variety", "country", "winery", "region_1"]
-
+MODEL_VERSION = 'Pipeline'
 
 class Trainer(object):
     ESTIMATOR = "RandomForest"
@@ -38,7 +44,7 @@ class Trainer(object):
 
     def __init__(self, X, y, **kwargs):
         # TODO: add a doctsring
-
+        self.pipeline = None
         self.kwargs = kwargs
         self.local = kwargs.get("local", False)
         self.mlflow = kwargs.get("mlflow", False)
@@ -52,6 +58,9 @@ class Trainer(object):
             self.X_train, self.X_val, self.y_train, self.y_val = train_test_split(
                 self.X_train, self.y_train, test_size=0.15, random_state=1
             )
+        # self.pca = self.kwargs.get
+        self.log_kwargs_params()
+        self.log_machine_specs()
 
     def get_estimator(self):
         estimator = self.kwargs.get("estimator", self.ESTIMATOR)
@@ -85,28 +94,11 @@ class Trainer(object):
     def set_pipeline(self):
         memory = self.kwargs.get("pipeline_memory", None)
         feateng_steps = self.kwargs.get(
-            "feateng", ["year", "weather", "description_sentiment", "title_length"]
+            "feateng", ["year", "weather", "description_sentiment", "title_length","categorical"]
         )
         if memory:
             memory = mkdtemp()
         # define feature selection columntransformer
-        feature_sel_pipe = [
-            ("feature_selection", FeatureSelectionEncoder(THRESHOLD), CAT_FEATURES)
-        ]
-        feature_selection_encoder = ColumnTransformer(
-            feature_sel_pipe, n_jobs=None, remainder="drop"
-        )
-        # define feature engineering pipeline block
-        pipe_year = make_pipeline(
-            YearVintageEncoder(title="title"),
-            SimpleImputer(strategy="median"),
-            QuantileTransformer(),
-        )
-        pipe_weather = make_pipeline(
-            WeatherEncoder(country="country"),
-            SimpleImputer(strategy="median"),
-            QuantileTransformer(),
-        )
         pipe_sentiment = make_pipeline(
             DescriptionSentimentEncoder(description="description"),
             QuantileTransformer(),
@@ -119,14 +111,21 @@ class Trainer(object):
             VocabRichnessEncoder(description="description"), QuantileTransformer()
         )
         price_bin = make_pipeline(PriceBinEncoder(price="price"), OneHotEncoder())
+
+        pipe_weather = make_pipeline(
+                    WeatherEncoder('country','year'),
+                    SimpleImputer(strategy = 'median'),
+                    QuantileTransformer()
+                )
         # Define default feature engineering blocs
         feateng_blocks = [
-            ("year", pipe_year, ["title"]),
-            ("weather", pipe_weather, ["country"]),
+            ("weather", pipe_weather, ["country","year"]),
+            ("year",YearReturnEnconder("year"),["year"]),
             ("description_sentiment", pipe_sentiment, ["description"]),
-            ("title_length", pipe_title_length, ["title", "title_length"]),
+            ("title_length", pipe_title_length, ["taster_name","title"]),
             ("vocab_richness", pipe_vocab_richness, ["description"]),
-            ("price_bin", price_bin, ["description"]),
+            ("price_bin", price_bin, ["price"]),
+            ("categorical",CreateDummies(),CAT_FEATURES)
         ]
         # Filter out some bocks according to input parameters
         for bloc in feateng_blocks:
@@ -134,21 +133,24 @@ class Trainer(object):
                 feateng_blocks.remove(bloc)
 
         features_encoder = ColumnTransformer(
-            feateng_blocks, n_jobs=None, remainder="drop"
+            feateng_blocks, n_jobs=None,
+            remainder='drop'
         )
 
         self.pipeline = Pipeline(
             steps=[
-                ("feature_selection", feature_selection_encoder)(
-                    "features", features_encoder
-                ),
-                ("clf", self.get_estimator()),
+                ('feature',FeatureSelectionEncoder(threshold=1E-6)),
+                ('year', YearVintageEncoder(title="title")),
+                ('price_impute',PriceImputer(price='price')),
+                ('feat_eng',features_encoder),
+                ('scaler',QuantileTransformer()),
+                ("clf", self.get_estimator())
             ],
             memory=memory,
         )
 
-        if self.pca:
-            self.pipeline.steps.insert(2, ["pca", PcaEncoder()])
+        # if self.pca:
+        #     self.pipeline.steps.insert(-2, ["pca", PCA(n_components=12)])
 
         # TODO add optimze function similar to taxifaremodel
 
@@ -174,23 +176,23 @@ class Trainer(object):
         # mlflow logs
         self.mlflow_log_metric("train_time", int(time.time() - tic))
 
+    def compute_f1(self, X_test, y_test):
+        if self.pipeline is None:
+            raise ("Cannot evaluate an empty pipeline")
+        f1_score = f1(self.pipeline, X_test, y_test)
+        return round(f1_score, 3)
+
     def evaluate(self):
         f1_train = self.compute_f1(self.X_train, self.y_train)
         self.mlflow_log_metric("f1_train", f1_train)
         if self.split:
-            f1_val = self.compute_f1(self.X_val, self.y_val, show=True)
+            f1_val = self.compute_f1(self.X_val, self.y_val)
             self.mlflow_log_metric("f1_val", f1_val)
             print(
-                colored("f1 train: {} || rmse val: {}".format(f1_train, f1_val), "blue")
+                colored("f1 train: {} || f1 val: {}".format(f1_train, f1_val), "blue")
             )
         else:
             print(colored("f1 train: {}".format(f1_train), "blue"))
-
-    def compute_f1(self, X_test, y_test):
-        if self.pipeline is None:
-            raise ("Cannot evaluate an empty pipeline")
-        f1 = f1(self.pipeline, X_test, y_test)
-        return round(f1, 3)
 
     def save_model(self, upload=True, auto_remove=True):
         if self.local:
@@ -242,3 +244,31 @@ class Trainer(object):
         ram = int(mem.total / 1000000000)
         self.mlflow_log_param("ram", ram)
         self.mlflow_log_param("cpus", cpus)
+
+if __name__ == "__main__":
+    warnings.simplefilter(action='ignore', category=FutureWarning)
+    # Get and clean data
+    experiment = "winereviewpredict_set_EB"
+    params = dict(
+                  upload=True,
+                  gridsearch=False,
+                  estimator="RandomForest",
+                  mlflow=True,  # set to True to log params to mlflow
+                  experiment_name=experiment)
+    print("############   Loading Data   ############")
+    d = GetData("gcp",nrows=5000)
+    df = d.clean_data()
+    y_train = df["points"]
+    X_train = df.drop("points", axis=1)
+    del df
+    print("shape: {}".format(X_train.shape))
+    print("size: {} Mb".format(X_train.memory_usage().sum() / 1e6))
+    # Train and save model, locally and
+    t = Trainer(X=X_train, y=y_train, **params)
+    # del X_train, y_train
+    print(colored("############  Training model   ############", "red"))
+    t.train()
+    print(colored("############  Evaluating model ############", "blue"))
+    t.evaluate()
+    print(colored("############   Saving model    ############", "green"))
+    t.save_model()
