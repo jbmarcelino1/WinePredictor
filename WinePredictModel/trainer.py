@@ -285,6 +285,8 @@ if __name__ == "__main__":
                 "description_sentiment",
                 "categorical",
                 "price_quan",
+                "vocab_richness",
+                "price_bin"
                         ]
     experiment = "winereviewpredict_set_EB"
     params = dict(
