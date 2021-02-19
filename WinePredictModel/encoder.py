@@ -11,7 +11,7 @@ from sklearn.impute import SimpleImputer
 from data import GetData
 import numpy as np
 from sklearn.decomposition import PCA
-
+from imblearn.over_sampling import BorderlineSMOTE
 TEMP = "temperature"
 COUNTRY_ISO = "country_iso_data"
 WEATHER_MONTH = "weather_country_month_v2"
@@ -56,11 +56,14 @@ class YearReturnEnconder(BaseEstimator, TransformerMixin):
 class DescriptionSentimentEncoder(BaseEstimator, TransformerMixin):
     def __init__(self, description):
         self.description = description
+        self.simp_imp = SimpleImputer(strategy='median')
 
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
         X = clean_description_sentiment(X, self.description)
+        X[["pos", "neg"]] = self.simp_imp.fit_transform(X[["pos", "neg"]])
+        X[["pos", "neg"]] = X[["pos", "neg"]].astype(float)
         return X[["pos", "neg"]].reset_index(drop=True)
 
     def fit(self, X, y=None):
@@ -229,12 +232,3 @@ if __name__ == "__main__":
     # X_features = fs.transform(df)
     # print(X_features.columns)
     # print(X_features.info())
-
-
-
-
-
-
-
-
-

@@ -45,6 +45,7 @@ def vocab_richness(text):
 
 
 def f1(model, X_test, y_test):
+    print(X_test)
     y_pred = model.predict(X_test)
     score = f1_score(y_test, y_pred, average="weighted")
     return score
