@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from google.cloud import storage
-from constants import COLUMN_DROP, WINE_DATA, DROP_NA
+from WinePredictModel.constants import COLUMN_DROP, WINE_DATA, DROP_NA
 BUCKET_NAME = 'winerating-ml-marcelino-project'
 
 
