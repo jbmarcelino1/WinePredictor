@@ -4,6 +4,7 @@ import warnings
 import joblib
 import mlflow
 import pandas as pd
+import os
 from tempfile import mkdtemp
 from sklearn.impute import SimpleImputer
 from sklearn.ensemble import RandomForestClassifier
@@ -18,9 +19,10 @@ from psutil import virtual_memory
 from sklearn.compose import ColumnTransformer
 from termcolor import colored
 from sklearn.decomposition import PCA
+from sklearn.model_selection import RandomizedSearchCV
 from imblearn.over_sampling import BorderlineSMOTE
-from data import GetData
-from encoder import (
+from WinePredictModel.data import GetData
+from WinePredictModel.encoder import (
     YearVintageEncoder,
     DescriptionSentimentEncoder,
     VocabRichnessEncoder,
@@ -81,7 +83,7 @@ class Trainer(object):
         if estimator == "xgboost":
             model = XGBClassifier(
                 objective="multi:softmax",
-                n_jobs=self.n_jobs,
+                n_jobs=-1,
                 max_depth=10,
                 learning_rate=0.05,
                 gamma=3,
@@ -192,20 +194,23 @@ class Trainer(object):
         X_train_preproc = self.pipeline_feature.fit_transform(self.X_train)
         bm = BorderlineSMOTE(random_state=2,sampling_strategy='minority',k_neighbors=1,m_neighbors=20)
         self.X_train_smote,self.y_train_smote = bm.fit_resample(X_train_preproc,self.y_train)
-        self.model = self.get_estimator()
         if gridsearch:
             self.model = RandomizedSearchCV(
-            estimator=self.model,
-            param_distributions=self.model,
+            estimator=self.get_estimator(),
+            param_distributions=self.model_params,
             n_iter=10,
             cv=2,
-            verbose=1,
+            verbose=5,
             random_state=42,
             n_jobs=None,
             )
             self.model.fit(self.X_train_smote,self.y_train_smote)
             self.mlflow_log_metric("train_time", int(time.time() - tic))
+            print(colored(f'best score: {self.model.best_score_}',"blue"))
+            print(colored(f'best params: {self.model.best_params_}',"blue"))
+            self.model = self.model.best_estimator_
         else:
+            self.model = self.get_estimator()
             self.model.fit(self.X_train_smote,self.y_train_smote)
             self.mlflow_log_metric("train_time", int(time.time() - tic))
 
@@ -226,8 +231,11 @@ class Trainer(object):
 
     def save_model(self, upload=True, auto_remove=True):
         if self.local:
-            joblib.dump(self.pipeline_feature, "feature_eng.joblib")
-            joblib.dump(self.model,"model.joblib")
+            BASE = r'model'
+            if not os.path.exists(BASE):
+                os.makedirs('model')
+            joblib.dump(self.pipeline_feature, os.path.join(BASE,"feature_eng.joblib"))
+            joblib.dump(self.model,os.path.join(BASE,"model.joblib"))
         if not self.local:
             storage_upload(model_version=MODEL_VERSION)
 
@@ -279,14 +287,6 @@ class Trainer(object):
 if __name__ == "__main__":
     warnings.simplefilter(action='ignore', category=FutureWarning)
     # Get and clean data
-    feat_eng = [
-                "year",
-                "weather",
-                "description_sentiment",
-                "categorical",
-                "price_quan",
-                "vocab_richness",
-                        ]
     experiment = "winereviewpredict_set_EB"
     params = dict(
                   upload=True,
@@ -295,8 +295,7 @@ if __name__ == "__main__":
                   mlflow=True,
                   local=True,  # set to True to log params to mlflow
                   experiment_name=experiment,
-                  estimator_params={'n_estimators':500},
-                  feateng=feat_eng)
+                  )
     print("############   Loading Data   ############")
     d = GetData("gcp",nrows=5000)
     df = d.clean_data()
@@ -309,8 +308,8 @@ if __name__ == "__main__":
     t = Trainer(X=X_train, y=y_train, **params)
     del X_train, y_train
     print(colored("############  Training model   ############", "red"))
-    t.train()
+    t.train(gridsearch=False)
     print(colored("############  Evaluating model ############", "blue"))
     t.evaluate()
-    # print(colored("############   Saving model    ############", "green"))
-    # t.save_model()
+    print(colored("############   Saving model    ############", "green"))
+    t.save_model()
