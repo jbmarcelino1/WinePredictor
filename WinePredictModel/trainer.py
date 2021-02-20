@@ -295,9 +295,10 @@ if __name__ == "__main__":
                   mlflow=True,
                   local=True,  # set to True to log params to mlflow
                   experiment_name=experiment,
+
                   )
     print("############   Loading Data   ############")
-    d = GetData("gcp",nrows=5000)
+    d = GetData("gcp",nrows)
     df = d.clean_data()
     y_train = df["points"]
     X_train = df.drop("points", axis=1)

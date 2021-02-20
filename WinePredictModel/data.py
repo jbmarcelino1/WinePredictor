@@ -72,6 +72,7 @@ class GetData:
         wine_df = wine_df.drop(columns=COLUMN_DROP)
         wine_df = wine_df.dropna(subset=DROP_NA)
         # remove duplicates based on unique values in the df
+        wine_df['region_1'] = wine_df['region_1'].fillna('Other')
         wine_df = wine_df.drop_duplicates(subset=["description", "title"])
         wine_df["points"] = pd.cut(wine_df["points"], bins=5, labels=[1, 2, 3, 4, 5])
         return wine_df

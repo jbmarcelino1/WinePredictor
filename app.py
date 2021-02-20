@@ -8,21 +8,16 @@ app = flask.Flask(__name__)
 @app.route('/winemodel',methods=['GET','POST'])
 def predict_wine_rating():
     country = request.args.get('country')
+
     description = request.args.get('description','wine')
     price = float(request.args.get('price',str(MEDIAN_PRICE)))
-    province = request.args.get('province','Other')
-    region = request.args.get('region')
+    province = request.args.get('province')
+    region = 'Other'
     variety = request.args.get('variety')
     taster_name = request.args.get('taster_name')
     year = request.args.get('year')
-    # if brand and winery the same
-    if 'brand' in request.args and not 'winery'in request.args:
-        brand = request.args.get('brand')
-        winery = brand
-    else:
-        brand = request.args.get('brand')
-        winery = request.args.get('winery')
-    title = f"{brand} {year} {variety} ({region})"
+    winery = request.args.get('winery')
+    title = f"{winery} {year} {variety} ({region})"
 
     df = pd.DataFrame(dict(country=[country],
                 description=[description],
