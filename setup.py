@@ -7,6 +7,7 @@ with open('requirements.txt') as f:
 requirements = [x.strip() for x in content if 'git+' not in x]
 
 
+
 setup(name='wine_predict_model',
       version="1.0",
       description="Wine Predict Model",
