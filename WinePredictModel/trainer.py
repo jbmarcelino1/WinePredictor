@@ -326,6 +326,7 @@ if __name__ == "__main__":
             "bootstrap": False,
         },
     )
+
     print("############   Loading Data   ############")
     d = GetData("gcp")
     df = d.clean_data()
@@ -338,7 +339,7 @@ if __name__ == "__main__":
     t = Trainer(X=X_train, y=y_train, **params)
     del X_train, y_train
     print(colored("############  Training model   ############", "red"))
-    t.train(gridsearch=False)
+    t.train(gridsearch=True)
     print(colored("############  Evaluating model ############", "blue"))
     t.evaluate()
     print(colored("############   Saving model    ############", "green"))
