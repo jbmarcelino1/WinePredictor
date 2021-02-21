@@ -5,13 +5,14 @@ from WinePredictModel.utils import (
     clean_description_sentiment,
     vocab_richness,
     select_cat_data_threshold,
-    create_dummies_ohe
+    create_dummies_ohe,
 )
 from sklearn.impute import SimpleImputer
 from WinePredictModel.data import GetData
 import numpy as np
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import BorderlineSMOTE
+
 TEMP = "temperature"
 COUNTRY_ISO = "country_iso_data"
 WEATHER_MONTH = "weather_country_month_v2"
@@ -27,18 +28,19 @@ class YearVintageEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        X['year'] = X[self.title].str.extract('(\d+)')
+        X["year"] = X[self.title].str.extract("(\d+)")
         X["year"] = pd.to_numeric(X["year"])
         X["year"] = np.where(
             (X["year"] >= 2021) | (X["year"] <= (2021 - 70)), np.nan, X["year"]
         )
-        X["year"] = pd.to_datetime(X["year"],format='%Y').dt.year
-        sc = SimpleImputer(strategy = 'median')
-        X[['year']] = sc.fit_transform(X[['year']])
+        X["year"] = pd.to_datetime(X["year"], format="%Y").dt.year
+        sc = SimpleImputer(strategy="median")
+        X[["year"]] = sc.fit_transform(X[["year"]])
         return X
 
     def fit(self, X, y=None):
         return self
+
 
 class YearReturnEnconder(BaseEstimator, TransformerMixin):
     def __init__(self, year):
@@ -56,7 +58,7 @@ class YearReturnEnconder(BaseEstimator, TransformerMixin):
 class DescriptionSentimentEncoder(BaseEstimator, TransformerMixin):
     def __init__(self, description):
         self.description = description
-        self.simp_imp = SimpleImputer(strategy='median')
+        self.simp_imp = SimpleImputer(strategy="median")
 
     def transform(self, X, y=None):
         """implement encode here"""
@@ -85,18 +87,17 @@ class VocabRichnessEncoder(BaseEstimator, TransformerMixin):
 
 
 class TitleLengthEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, taster_name, title):
-        self.taster_name = taster_name
+    def __init__(self, title):
+        # self.taster_name = taster_name
         self.title = title
 
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        col_list = [self.title, self.taster_name]
-        X[col_list] = X[col_list].astype(str)
-        for col in col_list:
+        X[self.title] = X[self.title].astype(str)
+        for col in [self.title]:
             X[f"{col}_length"] = X[col].apply(lambda x: len(x))
-        return X[["title_length", "taster_name_length"]].reset_index(drop=True)
+        return X[["title_length"]].reset_index(drop=True)
 
     def fit(self, X, y=None):
         return self
@@ -145,20 +146,20 @@ class WeatherEncoder(BaseEstimator, TransformerMixin):
             left_on=["country_iso", "year"],
             right_on=["country_iso", "year"],
         )
-        return df[['avg_temp']].reset_index(drop=True)
+        return df[["avg_temp"]].reset_index(drop=True)
 
     def fit(self, X, y=None):
         return self
 
 
 class PriceImputer(BaseEstimator, TransformerMixin):
-    def __init__(self,price):
+    def __init__(self, price):
         self.price = price
 
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        si = SimpleImputer(strategy='median')
+        si = SimpleImputer(strategy="median")
         X[[self.price]] = si.fit_transform(X[[self.price]])
 
         return X
@@ -166,8 +167,9 @@ class PriceImputer(BaseEstimator, TransformerMixin):
     def fit(self, X, y=None):
         return self
 
+
 class CreateDummies(BaseEstimator, TransformerMixin):
-    def __init__(self,cat_features=CAT_FEATURES):
+    def __init__(self, cat_features=CAT_FEATURES):
         self.cat_features = cat_features
 
     def transform(self, X, y=None):
@@ -191,8 +193,10 @@ class FeatureSelectionEncoder(BaseEstimator, TransformerMixin):
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        self.features.columns = [i.replace('country_iso','country') for i in self.features.columns]
-        X_filtered =  select_cat_data_threshold(
+        self.features.columns = [
+            i.replace("country_iso", "country") for i in self.features.columns
+        ]
+        X_filtered = select_cat_data_threshold(
             X, self.features, self.threshold, self.cat_features
         )
         return X_filtered.reset_index(drop=True)
@@ -202,8 +206,8 @@ class FeatureSelectionEncoder(BaseEstimator, TransformerMixin):
 
 
 if __name__ == "__main__":
-    df = GetData('gcp').clean_data()
-    fs = FeatureSelectionEncoder(1E-6)
+    df = GetData("gcp").clean_data()
+    fs = FeatureSelectionEncoder(1e-6)
     df = fs.fit_transform(df)
     print(df.columns)
     # dist = YearVintageEncoder('title')
