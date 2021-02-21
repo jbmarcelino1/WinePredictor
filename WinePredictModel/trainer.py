@@ -291,13 +291,13 @@ if __name__ == "__main__":
     params = dict(
                   upload=True,
                   gridsearch=False,
-                  estimator="RandomForest",
+                  estimator="xgboost",
                   mlflow=True,
                   local=True,  # set to True to log params to mlflow
                   experiment_name=experiment,
                   )
     print("############   Loading Data   ############")
-    d = GetData("gcp",nrows=5000)
+    d = GetData("gcp")
     df = d.clean_data()
     y_train = df["points"]
     X_train = df.drop("points", axis=1)
@@ -308,7 +308,7 @@ if __name__ == "__main__":
     t = Trainer(X=X_train, y=y_train, **params)
     del X_train, y_train
     print(colored("############  Training model   ############", "red"))
-    t.train(gridsearch=False)
+    t.train(gridsearch=True)
     print(colored("############  Evaluating model ############", "blue"))
     t.evaluate()
     print(colored("############   Saving model    ############", "green"))
