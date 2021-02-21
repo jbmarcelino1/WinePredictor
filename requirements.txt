@@ -24,3 +24,7 @@ scipy== 1.2.2
 category_encoders==2.2.2
 nltk==3.5,
 textblob==0.15.3
+imbalanced-learn==0.7.0
+imblearn==0.0
+CurrencyConverter==0.15
+setuptools-git==1.2
