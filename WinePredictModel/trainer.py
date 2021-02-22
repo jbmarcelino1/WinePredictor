@@ -326,6 +326,7 @@ if __name__ == "__main__":
             "bootstrap": False,
         },
     )
+
     print("############   Loading Data   ############")
     d = GetData("gcp")
     df = d.clean_data()
