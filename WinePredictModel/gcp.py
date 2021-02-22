@@ -1,7 +1,7 @@
 import os
 from google.cloud import storage
 from termcolor import colored
-from params import BUCKET_NAME, MODEL_NAME, MODEL_VERSION
+from WinePredictModel.params import BUCKET_NAME, MODEL_NAME, MODEL_VERSION
 
 
 def storage_upload(model_version=MODEL_VERSION, bucket=BUCKET_NAME, rm=False):

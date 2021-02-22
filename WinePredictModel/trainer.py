@@ -34,8 +34,8 @@ from WinePredictModel.encoder import (
     PriceImputer,
     CreateDummies,
 )
-from utils import f1
-from gcp import storage_upload
+from WinePredictModel.utils import f1
+from WinePredictModel.gcp import storage_upload
 import numpy as np
 from sklearn.metrics import f1_score
 
@@ -141,7 +141,7 @@ class Trainer(object):
             QuantileTransformer(),
         )
         pipe_title_length = make_pipeline(
-            TitleLengthEncoder(taster_name="taster_name", title="title"),
+            TitleLengthEncoder(title="title"),
             QuantileTransformer(),
         )
         pipe_vocab_richness = make_pipeline(
@@ -160,7 +160,7 @@ class Trainer(object):
             ("year",YearReturnEnconder("year"),["year"]),
             ("price_quan",QuantileTransformer(),["price"]),
             ("description_sentiment", pipe_sentiment, ["description"]),
-            ("title_length", pipe_title_length, ["taster_name","title"]),
+            ("title_length", pipe_title_length, ["title"]),
             ("vocab_richness", pipe_vocab_richness, ["description"]),
             ("price_bin", price_bin, ["price"]),
             ("categorical",OneHotEncoder(handle_unknown='ignore'),CAT_FEATURES)]
@@ -288,10 +288,18 @@ if __name__ == "__main__":
     params = dict(
                   upload=True,
                   gridsearch=False,
-                  estimator="RandomForest",
+                  estimator="xgboost",
                   mlflow=True,
                   local=True,  # set to True to log params to mlflow
                   experiment_name=experiment,
+                  estimator_params= {
+                  'n_estimators': 1800,
+                  'min_samples_split': 5,
+                  'min_samples_leaf': 1,
+                  'max_features': 'auto',
+                  'max_depth': 100,
+                  'bootstrap': True
+                  }
                   )
     print("############   Loading Data   ############")
     d = GetData("gcp")

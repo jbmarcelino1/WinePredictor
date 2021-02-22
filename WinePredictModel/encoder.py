@@ -85,18 +85,17 @@ class VocabRichnessEncoder(BaseEstimator, TransformerMixin):
 
 
 class TitleLengthEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, taster_name, title):
-        self.taster_name = taster_name
+    def __init__(self, title):
         self.title = title
 
     def transform(self, X, y=None):
         """implement encode here"""
         assert isinstance(X, pd.DataFrame)
-        col_list = [self.title, self.taster_name]
-        X[col_list] = X[col_list].astype(str)
+        col_list = [self.title]
+        X[self.title] = X[self.title].astype(str)
         for col in col_list:
             X[f"{col}_length"] = X[col].apply(lambda x: len(x))
-        return X[["title_length", "taster_name_length"]].reset_index(drop=True)
+        return X[["title_length"]].reset_index(drop=True)
 
     def fit(self, X, y=None):
         return self
