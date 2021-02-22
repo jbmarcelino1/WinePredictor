@@ -185,9 +185,6 @@ class Trainer(object):
             memory=memory,
         )
 
-        # if self.pca:
-        #      self.pipeline.steps.insert(-2, ["pca", PCA(n_components=12)])
-
     def train(self, gridsearch=False):
         tic = time.time()
         self.set_pipeline()
@@ -297,7 +294,7 @@ if __name__ == "__main__":
                   experiment_name=experiment,
                   )
     print("############   Loading Data   ############")
-    d = GetData("gcp",nrows=5000)
+    d = GetData("gcp")
     df = d.clean_data()
     y_train = df["points"]
     X_train = df.drop("points", axis=1)
