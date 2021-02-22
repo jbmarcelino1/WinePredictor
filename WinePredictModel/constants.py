@@ -6,4 +6,5 @@ COLUMN_DROP = [
     "taster_twitter_handle",
     "taster_name",
 ]
-DROP_NA = ["variety", "province", "country"]
+
+DROP_NA = ["variety", "province", "country","region_1"]
