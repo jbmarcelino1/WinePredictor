@@ -1,6 +1,6 @@
 import joblib
 import os
-FILEPATH = r'../model'
+FILEPATH = r'model'
 FEATURE = 'feature_eng'
 MODEL = 'model'
 
@@ -14,6 +14,3 @@ def load_models(base_filepath=FILEPATH):
 
 if __name__ == '__main__':
     test1, test2 = load_models()
-
-
-

@@ -1,16 +1,16 @@
 import string
 from nltk.tokenize import word_tokenize
-import nltk
-from nltk.corpus import stopwords
-from textblob import Blobber
-from textblob.sentiments import NaiveBayesAnalyzer
+# import nltk
+# from nltk.corpus import stopwords
+# from textblob import Blobber
+# from textblob.sentiments import NaiveBayesAnalyzer
 from WinePredictModel.data import GetData
 import pandas as pd
 from sklearn.metrics import f1_score
 
-nltk.download("stopwords")
-nltk.download("movie_reviews")
-nltk.download("punkt")
+# nltk.download("stopwords")
+# nltk.download("movie_reviews")
+# nltk.download("punkt")
 
 
 def clean_descriptions(df, description_column):

@@ -18,7 +18,7 @@ from mlflow.tracking import MlflowClient
 from psutil import virtual_memory
 from sklearn.compose import ColumnTransformer
 from termcolor import colored
-from sklearn.decomposition import PCA
+from sklearn.decomposition import PCA,KernelPCA
 from sklearn.model_selection import RandomizedSearchCV
 from imblearn.over_sampling import BorderlineSMOTE
 from WinePredictModel.data import GetData
@@ -34,8 +34,8 @@ from WinePredictModel.encoder import (
     PriceImputer,
     CreateDummies,
 )
-from utils import f1
-from gcp import storage_upload
+from WinePredictModel.utils import f1
+from WinePredictModel.gcp import storage_upload
 import numpy as np
 from sklearn.metrics import f1_score
 
@@ -146,7 +146,7 @@ class Trainer(object):
             [
                 "year",
                 "weather",
-                "description_sentiment",
+                # "description_sentiment",
                 "title_length",
                 "categorical",
                 "price_quan",
