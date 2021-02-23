@@ -12,6 +12,7 @@ def load_models(base_filepath=FILEPATH):
                 os.path.join(base_filepath,model))
     return joblib_dict.get(FEATURE),joblib_dict.get(MODEL)
 
+
 if __name__ == '__main__':
     test1, test2 = load_models()
 
