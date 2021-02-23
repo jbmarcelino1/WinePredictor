@@ -1,6 +1,6 @@
 import joblib
 import os
-FILEPATH = r'model'
+FILEPATH = r'../model'
 FEATURE = 'feature_eng'
 MODEL = 'model'
 
