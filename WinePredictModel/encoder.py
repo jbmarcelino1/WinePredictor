@@ -1,9 +1,9 @@
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
 from WinePredictModel.utils import (
-    clean_descriptions,
-    clean_description_sentiment,
-    vocab_richness,
+    # clean_descriptions,
+    # clean_description_sentiment,
+    # vocab_richness,
     select_cat_data_threshold,
     create_dummies_ohe,
 )
@@ -55,35 +55,35 @@ class YearReturnEnconder(BaseEstimator, TransformerMixin):
         return self
 
 
-class DescriptionSentimentEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, description):
-        self.description = description
-        self.simp_imp = SimpleImputer(strategy="median")
+# class DescriptionSentimentEncoder(BaseEstimator, TransformerMixin):
+#     def __init__(self, description):
+#         self.description = description
+#         self.simp_imp = SimpleImputer(strategy="median")
 
-    def transform(self, X, y=None):
-        """implement encode here"""
-        assert isinstance(X, pd.DataFrame)
-        X = clean_description_sentiment(X, self.description)
-        X[["pos", "neg"]] = self.simp_imp.fit_transform(X[["pos", "neg"]])
-        X[["pos", "neg"]] = X[["pos", "neg"]].astype(float)
-        return X[["pos", "neg"]].reset_index(drop=True)
+#     def transform(self, X, y=None):
+#         """implement encode here"""
+#         assert isinstance(X, pd.DataFrame)
+#         X = clean_description_sentiment(X, self.description)
+#         X[["pos", "neg"]] = self.simp_imp.fit_transform(X[["pos", "neg"]])
+#         X[["pos", "neg"]] = X[["pos", "neg"]].astype(float)
+#         return X[["pos", "neg"]].reset_index(drop=True)
 
-    def fit(self, X, y=None):
-        return self
+#     def fit(self, X, y=None):
+#         return self
 
 
-class VocabRichnessEncoder(BaseEstimator, TransformerMixin):
-    def __init__(self, description):
-        self.description = description
+# class VocabRichnessEncoder(BaseEstimator, TransformerMixin):
+#     def __init__(self, description):
+#         self.description = description
 
-    def transform(self, X, y=None):
-        """implement encode here"""
-        assert isinstance(X, pd.DataFrame)
-        X["vocab richness"] = X[self.description].apply(vocab_richness)
-        return X[["vocab richness"]].reset_index(drop=True)
+#     def transform(self, X, y=None):
+#         """implement encode here"""
+#         assert isinstance(X, pd.DataFrame)
+#         X["vocab richness"] = X[self.description].apply(vocab_richness)
+#         return X[["vocab richness"]].reset_index(drop=True)
 
-    def fit(self, X, y=None):
-        return self
+#     def fit(self, X, y=None):
+#         return self
 
 
 class TitleLengthEncoder(BaseEstimator, TransformerMixin):

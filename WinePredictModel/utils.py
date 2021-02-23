@@ -1,5 +1,5 @@
 import string
-from nltk.tokenize import word_tokenize
+# from nltk.tokenize import word_tokenize
 # import nltk
 # from nltk.corpus import stopwords
 # from textblob import Blobber
@@ -13,34 +13,34 @@ from sklearn.metrics import f1_score
 # nltk.download("punkt")
 
 
-def clean_descriptions(df, description_column):
-    all_stops = set(stopwords.words("english")).union(set(string.punctuation))
-    clean_desc = []
-    for sentence in list(df[description_column]):
-        tok_desc = word_tokenize(sentence)
-        lower_data = [tok.lower() for tok in tok_desc]
-        tok_desc_no_num = [i for i in lower_data if i.isalpha()]
-        clean_desc.append([i for i in tok_desc_no_num if i not in all_stops])
-    return [" ".join(i) for i in clean_desc]
+# def clean_descriptions(df, description_column):
+#     all_stops = set(stopwords.words("english")).union(set(string.punctuation))
+#     clean_desc = []
+#     for sentence in list(df[description_column]):
+#         tok_desc = word_tokenize(sentence)
+#         lower_data = [tok.lower() for tok in tok_desc]
+#         tok_desc_no_num = [i for i in lower_data if i.isalpha()]
+#         clean_desc.append([i for i in tok_desc_no_num if i not in all_stops])
+#     return [" ".join(i) for i in clean_desc]
 
 
-def clean_description_sentiment(df, description_column):
-    cleaned_description = clean_descriptions(df, description_column)
-    tb = Blobber(analyzer=NaiveBayesAnalyzer())
-    blob = [tb(text) for text in cleaned_description]
-    sentiment_values = [text.sentiment for text in blob]
-    sentiment_df = pd.DataFrame(zip(*sentiment_values)).T
-    sentiment_df.columns = ["clf", "pos", "neg"]
-    sentiment_df = sentiment_df[["pos", "neg"]].astype(float)
-    return df.join(sentiment_df)
+# def clean_description_sentiment(df, description_column):
+#     cleaned_description = clean_descriptions(df, description_column)
+#     tb = Blobber(analyzer=NaiveBayesAnalyzer())
+#     blob = [tb(text) for text in cleaned_description]
+#     sentiment_values = [text.sentiment for text in blob]
+#     sentiment_df = pd.DataFrame(zip(*sentiment_values)).T
+#     sentiment_df.columns = ["clf", "pos", "neg"]
+#     sentiment_df = sentiment_df[["pos", "neg"]].astype(float)
+#     return df.join(sentiment_df)
 
 
-def vocab_richness(text):
-    tokens = word_tokenize(text)
-    total_length = len(tokens)
-    unique_words = set(tokens)
-    unique_word_length = len(unique_words)
-    return unique_word_length / total_length
+# def vocab_richness(text):
+#     tokens = word_tokenize(text)
+#     total_length = len(tokens)
+#     unique_words = set(tokens)
+#     unique_word_length = len(unique_words)
+#     return unique_word_length / total_length
 
 
 def f1(model, X_test, y_test):

@@ -24,8 +24,8 @@ from imblearn.over_sampling import BorderlineSMOTE
 from WinePredictModel.data import GetData
 from WinePredictModel.encoder import (
     YearVintageEncoder,
-    DescriptionSentimentEncoder,
-    VocabRichnessEncoder,
+    # DescriptionSentimentEncoder,
+    # VocabRichnessEncoder,
     TitleLengthEncoder,
     PriceBinEncoder,
     WeatherEncoder,
@@ -157,17 +157,17 @@ class Trainer(object):
         if memory:
             memory = mkdtemp()
         # define feature selection columntransformer
-        pipe_sentiment = make_pipeline(
-            DescriptionSentimentEncoder(description="description"),
-            QuantileTransformer(),
-        )
+        # pipe_sentiment = make_pipeline(
+        #     DescriptionSentimentEncoder(description="description"),
+        #     QuantileTransformer(),
+        # )
         pipe_title_length = make_pipeline(
             TitleLengthEncoder(title="title"),
             QuantileTransformer(),
         )
-        pipe_vocab_richness = make_pipeline(
-            VocabRichnessEncoder(description="description"), QuantileTransformer()
-        )
+        # pipe_vocab_richness = make_pipeline(
+        #     VocabRichnessEncoder(description="description"), QuantileTransformer()
+        # )
         price_bin = make_pipeline(
             PriceBinEncoder(price="price"), OneHotEncoder(handle_unknown="ignore")
         )
@@ -182,9 +182,9 @@ class Trainer(object):
             ("weather", pipe_weather, ["country", "year"]),
             ("year", YearReturnEnconder("year"), ["year"]),
             ("price_quan", QuantileTransformer(), ["price"]),
-            ("description_sentiment", pipe_sentiment, ["description"]),
+            # ("description_sentiment", pipe_sentiment, ["description"]),
             ("title_length", pipe_title_length, ["title"]),
-            ("vocab_richness", pipe_vocab_richness, ["description"]),
+            # ("vocab_richness", pipe_vocab_richness, ["description"]),
             ("price_bin", price_bin, ["price"]),
             ("categorical", OneHotEncoder(handle_unknown="ignore"), CAT_FEATURES),
         ]
@@ -255,7 +255,9 @@ class Trainer(object):
             BASE = r"model"
             if not os.path.exists(BASE):
                 os.makedirs("model")
+            print('feature_eng')
             joblib.dump(self.pipeline_feature, os.path.join(BASE, "feature_eng.joblib"),compress=3)
+            print('model')
             joblib.dump(self.model, os.path.join(BASE, "model.joblib"),compress=3)
         if not self.local:
             storage_upload(model_version=MODEL_VERSION)
