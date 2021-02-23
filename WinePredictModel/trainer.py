@@ -150,7 +150,7 @@ class Trainer(object):
                 "title_length",
                 "categorical",
                 "price_quan",
-                "vocab_richness",
+                # "vocab_richness",
                 "price_bin",
             ],
         )
