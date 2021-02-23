@@ -255,8 +255,8 @@ class Trainer(object):
             BASE = r"model"
             if not os.path.exists(BASE):
                 os.makedirs("model")
-            joblib.dump(self.pipeline_feature, os.path.join(BASE, "feature_eng.joblib"))
-            joblib.dump(self.model, os.path.join(BASE, "model.joblib"))
+            joblib.dump(self.pipeline_feature, os.path.join(BASE, "feature_eng.joblib"),compress=3)
+            joblib.dump(self.model, os.path.join(BASE, "model.joblib"),compress=3)
         if not self.local:
             storage_upload(model_version=MODEL_VERSION)
 
@@ -317,14 +317,6 @@ if __name__ == "__main__":
         mlflow=True,
         local=True,  # set to True to log params to mlflow
         experiment_name=experiment,
-        estimator_params={
-            "n_estimators": 1600,
-            "min_samples_split": 10,
-            "max_depth": 100,
-            'min_samples_leaf':1,
-            "max_features": 'sqrt',
-            "bootstrap": False,
-        },
     )
 
     print("############   Loading Data   ############")
@@ -339,8 +331,9 @@ if __name__ == "__main__":
     t = Trainer(X=X_train, y=y_train, **params)
     del X_train, y_train
     print(colored("############  Training model   ############", "red"))
-    t.train(gridsearch=True)
+    t.train(gridsearch=False)
     print(colored("############  Evaluating model ############", "blue"))
     t.evaluate()
     print(colored("############   Saving model    ############", "green"))
     t.save_model()
+    print(os.path.getsize('model/model.joblib'))
