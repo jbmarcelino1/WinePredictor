@@ -28,9 +28,9 @@ class GetData:
         if self.type not in ["local", "gcp"]:
             raise ValueError(f"{self.type} is not equal to local or gcp")
         if self.type == "local":
-            if operating_system == "mac":
+            if self.opertaing_system == "mac":
                 base_file_path = r"/Users/{}/Desktop/data".format(os.getlogin())
-            if operating_system == "windows":
+            if self.opertaing_system == "windows":
                 base_file_path = r"C:\Users\{}\Desktop\data".format(os.getlogin())
             df_dict = dict()
             for file in os.listdir(base_file_path):

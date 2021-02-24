@@ -146,11 +146,9 @@ class Trainer(object):
             [
                 "year",
                 "weather",
-                # "description_sentiment",
                 "title_length",
                 "categorical",
                 "price_quan",
-                # "vocab_richness",
                 "price_bin",
             ],
         )
