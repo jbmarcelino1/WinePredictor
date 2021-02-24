@@ -22,7 +22,6 @@ xgboost==1.1.1
 memoized-property==1.0.3
 scipy== 1.2.2
 category_encoders==2.2.2
-nltk==3.5
 textblob==0.15.3
 imbalanced-learn==0.7.0
 imblearn==0.0
