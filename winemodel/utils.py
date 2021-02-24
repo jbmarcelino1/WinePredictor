@@ -4,7 +4,7 @@ import string
 # from nltk.corpus import stopwords
 # from textblob import Blobber
 # from textblob.sentiments import NaiveBayesAnalyzer
-from WinePredictModel.data import GetData
+from winemodel.data import GetData
 import pandas as pd
 from sklearn.metrics import f1_score
 

@@ -1,7 +1,7 @@
 import joblib
 import pandas as pd
 import os
-from WinePredictModel.data import GetData
+from winemodel.data import GetData
 from termcolor import colored
 feat = joblib.load("model/feature_eng.joblib")
 model = joblib.load("model/model.joblib")

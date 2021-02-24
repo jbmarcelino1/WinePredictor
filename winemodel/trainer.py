@@ -21,8 +21,8 @@ from termcolor import colored
 from sklearn.decomposition import PCA,KernelPCA
 from sklearn.model_selection import RandomizedSearchCV
 from imblearn.over_sampling import BorderlineSMOTE
-from WinePredictModel.data import GetData
-from WinePredictModel.encoder import (
+from winemodel.data import GetData
+from winemodel.encoder import (
     YearVintageEncoder,
     # DescriptionSentimentEncoder,
     # VocabRichnessEncoder,
@@ -34,8 +34,8 @@ from WinePredictModel.encoder import (
     PriceImputer,
     CreateDummies,
 )
-from WinePredictModel.utils import f1
-from WinePredictModel.gcp import storage_upload
+from winemodel.utils import f1
+from winemodel.gcp import storage_upload
 import numpy as np
 from sklearn.metrics import f1_score
 

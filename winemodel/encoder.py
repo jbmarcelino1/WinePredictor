@@ -1,6 +1,6 @@
 import pandas as pd
 from sklearn.base import BaseEstimator, TransformerMixin
-from WinePredictModel.utils import (
+from winemodel.utils import (
     # clean_descriptions,
     # clean_description_sentiment,
     # vocab_richness,
@@ -8,7 +8,7 @@ from WinePredictModel.utils import (
     create_dummies_ohe,
 )
 from sklearn.impute import SimpleImputer
-from WinePredictModel.data import GetData
+from winemodel.data import GetData
 import numpy as np
 from sklearn.decomposition import PCA
 from imblearn.over_sampling import BorderlineSMOTE
